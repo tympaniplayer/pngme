@@ -1,6 +1,6 @@
 use std::{fmt::Display, str::FromStr};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ChunkType {
     data: String,
 }
@@ -8,7 +8,7 @@ pub struct ChunkType {
 impl TryFrom<[u8; 4]> for ChunkType {
     type Error = &'static str;
 
-    fn try_from(value: [u8; 4]) -> Result<Self, Self::Error> {
+   fn try_from(value: [u8; 4]) -> Result<Self, Self::Error> {
         let string_result = std::str::from_utf8(&value);
         match string_result {
             Ok(result) => Ok(ChunkType {
@@ -53,7 +53,7 @@ impl Eq for ChunkType {
 }
 
 impl ChunkType {
-    pub fn bytes(self) -> [u8; 4] {
+    pub fn bytes(&self) -> [u8; 4] {
         let mut array = [0u8; 4];
         for (&x, p) in self.data.as_bytes().iter().zip(array.iter_mut()) {
             *p = x;
