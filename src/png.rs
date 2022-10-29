@@ -36,35 +36,67 @@ impl Png {
 
     /// Appends a chunk to the end of this `Png` file's `Chunk` list.
     pub fn append_chunk(&mut self, chunk: Chunk) {
-        todo!()
+        self.chunks.push(chunk);
     }
 
     /// Searches for a `Chunk` with the specified `chunk_type` and removes the first
     /// matching `Chunk` from this `Png` list of chunks.
     pub fn remove_chunk(&mut self, chunk_type: &str) -> Result<Chunk> {
-        todo!()
+        let chunk = self
+            .chunks
+            .iter()
+            .position(|chunk| chunk.chunk_type().to_string() == chunk_type);
+        match chunk {
+            Some(index) => return Ok(self.chunks.remove(index)),
+            None => {
+                return Err(Box::new(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    "Chunk does not exist",
+                )))
+            }
+        }
     }
 
     /// The header of this PNG.
     pub fn header(&self) -> &[u8; 8] {
-        todo!()
+        &self.header 
     }
 
     /// Lists the `Chunk`s stored in this `Png`
     pub fn chunks(&self) -> &[Chunk] {
-        todo!()
+        &self.chunks
     }
 
     /// Searches for a `Chunk` with the specified `chunk_type` and returns the first
     /// matching `Chunk` from this `Png`.
     pub fn chunk_by_type(&self, chunk_type: &str) -> Option<&Chunk> {
-        todo!()
+        let chunk = self
+            .chunks
+            .iter()
+            .find(|chunk| chunk.chunk_type().to_string() == chunk_type);
+        match chunk {
+            Some(found) => return Some(found),
+            None => return None
+        }
     }
 
     /// Returns this `Png` as a byte sequence.
     /// These bytes will contain the header followed by the bytes of all of the chunks.
     pub fn as_bytes(&self) -> Vec<u8> {
-        todo!()
+        let chunks: Vec<u8> = self
+            .chunks()
+            .iter()
+            .cloned()
+            .map(|chunk| chunk.as_bytes())
+            .flatten()
+            .collect();
+        self
+            .header()
+            .to_vec()
+            .iter()
+            .cloned()
+            .chain(chunks)
+            .collect()
     }
 }
 
