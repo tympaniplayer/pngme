@@ -17,7 +17,7 @@ pub struct Chunk {
 impl Chunk {
     /// The length of the data portion of this chunk.
     pub fn length(&self) -> u32 {
-        self.data().len().try_into().unwrap()
+        self.data().len() as u32
     }
 
     /// The `ChunkType` of this chunk
@@ -60,9 +60,8 @@ impl Chunk {
     /// 3. The data itself *(`length` bytes)*
     /// 4. The CRC of the chunk type and data *(4 bytes)*
     pub fn as_bytes(&self) -> Vec<u8> {
-        let bytes: Vec<u8> = self
-            .data
-            .len()
+        let length_32: u32 = self.data.len() as u32;
+        let bytes: Vec<u8> = length_32
             .to_be_bytes()
             .iter()
             .cloned()
@@ -91,7 +90,7 @@ impl TryFrom<&[u8]> for Chunk {
         reader.read_exact(&mut buffer)?;
         let chunk_type_data = String::from_utf8(buffer.to_vec()).unwrap();
 
-        let mut data_buffer = vec![0u8; data_length.try_into().unwrap()];
+        let mut data_buffer = vec![0u8; data_length as usize];
         reader.read_exact(&mut data_buffer)?;
 
         reader.read_exact(&mut buffer)?;

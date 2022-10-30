@@ -1,10 +1,13 @@
 use std::convert::TryFrom;
 use std::fmt;
 use std::fs;
-use std::io::{BufReader, Read};
+use std::fs::File;
+use std::io::Cursor;
+use std::io::{BufReader, Read, SeekFrom, Seek};
 use std::path::Path;
 use std::str::FromStr;
 
+use crate::chunk;
 use crate::chunk::Chunk;
 use crate::chunk_type::ChunkType;
 use crate::{Error, Result};
@@ -31,7 +34,12 @@ impl Png {
 
     /// Creates a `Png` from a file path
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self> {
-        todo!()
+        let mut f = File::open(&path)?;
+        let meatadata = fs::metadata(&path)?;
+        let mut buffer = vec![0u8; meatadata.len() as usize];
+        f.read(&mut buffer)?;
+
+        Png::try_from(buffer.as_ref())
     }
 
     /// Appends a chunk to the end of this `Png` file's `Chunk` list.
@@ -104,13 +112,43 @@ impl TryFrom<&[u8]> for Png {
     type Error = Error;
 
     fn try_from(bytes: &[u8]) -> Result<Png> {
-        todo!()
+        let length: u64 = bytes.len() as u64;
+        let mut reader = Cursor::new(bytes);
+        let mut buffer= vec![0u8; 8];
+
+        reader.read_exact(&mut buffer)?;
+
+        if buffer != Png::STANDARD_HEADER {
+            return Err(Box::new(std::io::Error::new(std::io::ErrorKind::InvalidData, "PNG header invalid")));
+        }
+
+        let mut chunks: Vec<Chunk> = Vec::new();
+        while reader.seek(SeekFrom::Current(0)).unwrap() != length {
+            let current = reader.seek(SeekFrom::Current(0)).unwrap();
+
+            // Chunk data length
+            let mut chunk_data_buffer: [u8; 4] = [0u8;4];
+            reader.read_exact(&mut chunk_data_buffer)?;
+
+            // Chunk data length + lengh (4 bytes) + chunk_type (4 bytes)
+            // + crc (4 bytes)
+            let data_length = u32::from_be_bytes(chunk_data_buffer) + 12;
+            let mut chunk_buffer = vec![0u8; data_length as usize];
+            reader.set_position(current);
+            reader.read_exact(&mut chunk_buffer)?;
+            chunks.push(Chunk::try_from(chunk_buffer.as_ref()).unwrap());
+        }
+
+        Ok(Png { chunks, header: Png::STANDARD_HEADER})
     }
 }
 
 impl fmt::Display for Png {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        todo!()
+        writeln!(f, "Png {{",)?;
+        writeln!(f, "   Chunks: {}", self.chunks().len())?;
+        writeln!(f, "}}",)?;
+        Ok(())
     }
 }
 
