@@ -7,4 +7,5 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.66"
-crc = "2.0"
+crc = "3.0"
+clap = { version = "4.0.18", features = ["derive"] }
