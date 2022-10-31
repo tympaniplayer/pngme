@@ -34,12 +34,78 @@ fn main() -> Result<()> {
         commands::Commands::Decode {
             file_path,
             chunk_type,
-        } => todo!(),
+        } => {
+            let result = decode(file_path, chunk_type);
+            match result {
+                Ok(_) => (),
+                Err(error) => panic!("Unable to decode {}", error),
+            }
+        }
         commands::Commands::Remove {
             file_path,
             chunk_type,
-        } => todo!(),
-        commands::Commands::Print { file_path } => todo!(),
+        } => {
+            let result = remove(file_path, chunk_type);
+            match result {
+                Ok(_) => (),
+                Err(error) => panic!("Unable to remove chunk {}", error),
+            }
+        },
+        commands::Commands::Print { file_path } => {
+            print_png(file_path)?
+        },
+    }
+
+    Ok(())
+}
+
+fn print_png(file_path: Option<OsString>) -> Result<()> {
+    let png: Png;
+    match match_file(file_path).unwrap() {
+        (matched_png, _) => {
+            png = matched_png;
+        }
+    };
+
+    println!("{}", png);
+    Ok(())
+}
+
+fn remove(file_path: Option<OsString>, chunk_type: String) -> Result<()> {
+    let mut png: Png;
+    let match_result = match_file(file_path).unwrap();
+    match match_result {
+        (matched_png, _) => {
+            png = matched_png;
+        }
+    };
+
+    let removed_chunk = png.remove_chunk(&chunk_type);
+    match removed_chunk {
+        Ok(_) => {
+            println!("Removed message");
+            Ok(())
+        }
+        Err(error) => Err(error),
+    }
+}
+
+fn decode(file_path: Option<OsString>, chunk_type: String) -> Result<()> {
+   let png: Png;
+    let match_result = match_file(file_path).unwrap();
+    match match_result {
+        (matched_png, _) => {
+            png = matched_png;
+        }
+    }
+
+    let matched_chunk = png.chunk_by_type(&chunk_type);
+    match matched_chunk {
+        Some(chunk) => {
+            let message = chunk.data_as_string().unwrap();
+            println!("Encoded Message \n\t{}", message);
+        }
+        None => println!("Unable to find matching chunk type"),
     }
 
     Ok(())
@@ -53,22 +119,11 @@ fn encode(
 ) -> Result<()> {
     let mut png: Png;
     let matched_path: OsString;
-    match file_path {
-        Some(path) => {
-            png = {
-                let parse_result = Png::from_file(&path);
-                match parse_result {
-                    Ok(parsed) => parsed,
-                    Err(error) => panic!("Error parsing png {}", error),
-                }
-            };
+    let match_result = match_file(file_path).unwrap();
+    match match_result {
+        (matched_png, path) => {
+            png = matched_png;
             matched_path = path;
-        }
-        None => {
-            return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::InvalidInput,
-                "Invalid filename",
-            )));
         }
     }
     let chunk: Chunk;
@@ -93,6 +148,27 @@ fn encode(
     }
 
     Ok(())
+}
+
+fn match_file(file_path: Option<OsString>) -> Result<(Png, OsString)> {
+    match file_path {
+        Some(path) => {
+            let png = {
+                let parse_result = Png::from_file(&path);
+                match parse_result {
+                    Ok(parsed) => parsed,
+                    Err(error) => panic!("Error parsing png {}", error),
+                }
+            };
+            return Ok((png, path));
+        }
+        None => {
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "Invalid filename",
+            )));
+        }
+    }
 }
 
 fn write_png(png: &Png, path: &OsString) {

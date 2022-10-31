@@ -1,6 +1,6 @@
 use std::ffi::OsString;
 
-use clap::{Args, Subcommand};
+use clap::{Subcommand};
 
 #[derive(Debug, Subcommand)]
 pub enum Commands {

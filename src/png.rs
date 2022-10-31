@@ -3,13 +3,13 @@ use std::fmt;
 use std::fs;
 use std::fs::File;
 use std::io::Cursor;
-use std::io::{BufReader, Read, SeekFrom, Seek};
+use std::io::{Read, SeekFrom, Seek};
 use std::path::Path;
-use std::str::FromStr;
 
-use crate::chunk;
+
+
 use crate::chunk::Chunk;
-use crate::chunk_type::ChunkType;
+
 use crate::{Error, Result};
 
 /// A PNG container as described by the PNG spec
@@ -157,8 +157,7 @@ mod tests {
     use super::*;
     use crate::chunk::Chunk;
     use crate::chunk_type::ChunkType;
-    use std::convert::TryFrom;
-    use std::str::FromStr;
+        use std::{convert::TryFrom};
 
     fn testing_chunks() -> Vec<Chunk> {
         let mut chunks = Vec::new();
